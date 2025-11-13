@@ -1,0 +1,94 @@
+1. Dockerfile syntax version
+# syntax=docker/dockerfile:1.4
+
+
+Tells Docker to use BuildKit features from Dockerfile version 1.4 (needed for things like --mount=type=cache).
+
+Ensures modern caching and cross-platform builds work correctly.
+
+🧱 2. Builder stage
+FROM --platform=$BUILDPLATFORM python:3.10-alpine AS builder
+
+
+FROM sets the base image: a small, lightweight Python 3.10 Alpine Linux image.
+
+--platform=$BUILDPLATFORM allows Docker to build images for different architectures (e.g. x86_64, arm64).
+
+AS builder names this stage builder, which can be reused in later stages.
+
+📂 3. Set working directory
+WORKDIR /src
+
+
+Sets /src as the working directory inside the container.
+
+All following commands (like COPY, RUN, etc.) will operate from this path.
+
+📋 4. Copy requirements and install dependencies
+COPY requirements.txt ./
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip3 install --no-cache-dir -r requirements.txt
+
+
+Copies only requirements.txt to /src.
+
+The RUN line installs Python packages defined there.
+
+The --mount=type=cache,target=/root/.cache/pip temporarily caches downloaded pip packages, so future builds are faster (BuildKit feature).
+
+--no-cache-dir ensures pip doesn’t store unneeded package caches in the final image, keeping it lightweight.
+
+📁 5. Copy application code
+COPY . .
+
+
+Copies everything from your project directory (on your host) into the container’s /src folder.
+
+🚀 6. Default command
+CMD ["python3", "server.py"]
+
+
+Specifies the default process to start when the container runs.
+
+It launches your Flask (or Python) app: server.py.
+
+🧰 Second Stage — Development Environment
+
+This is for development containers (for example, used in VS Code Dev Containers or Docker Desktop Dev Environments).
+
+🏗 7. Base the dev environment on the builder
+FROM builder AS dev-envs
+
+
+Starts from the previously built stage (builder) so dependencies are already installed.
+
+🔄 8. Add extra packages
+RUN apk update && apk add --no-cache git bash
+
+
+Updates the Alpine package index.
+
+Installs git and bash (useful for interactive debugging or running scripts in development).
+
+👤 9. Add a non-root user
+RUN addgroup -S docker && \
+    adduser -S --shell /bin/bash --ingroup docker vscode
+
+
+Creates a group docker and a user vscode with Bash shell.
+
+Used mainly for DevContainers or VS Code remote development — running as a non-root user for safety.
+
+🐳 10. Copy Docker tools
+COPY --from=gloursdocker/docker / /
+
+
+Copies Docker CLI tools (docker, docker-compose, etc.) from another image (gloursdocker/docker) into this container.
+
+This allows your development container to run Docker commands (Docker-in-Docker).
+
+▶️ 11. Final CMD
+CMD ["python3", "server.py"]
+
+
+Same as the first stage — runs the Python app.
