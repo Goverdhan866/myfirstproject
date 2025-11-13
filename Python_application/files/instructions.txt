@@ -1,0 +1,4 @@
+here index.html should be inside the /templates folder.
+that is /app/templates/index.html
+
+then only the flask works
