@@ -1,0 +1,26 @@
+#Stage 1
+#Uses a full Python 3.9 image.
+FROM python:3.9 AS backend-builder
+#Copies your backend source code into the container.
+WORKDIR /app
+COPY files/ .
+#Installs all dependencies from requirements.txt.
+#This stage is heavy but temporary — only needed for building.This is Build Instruction
+RUN pip install --no-cache-dir -r requirements.txt
+
+
+
+#Stage 2
+#Starts with a lighter base image (python:3.9-slim) to keep the final image small.
+FROM python:3.9-slim
+#Copies:Installed dependencies (site-packages) from the build stage.
+WORKDIR /app
+#The actual application code from /app.
+COPY --from=backend-builder /usr/local/lib/python3.9/site-packages/ /usr/local/lib/python3.9/site-packages/
+COPY --from=backend-builder /app /app
+#Exposes port 5000 (Flask default).
+EXPOSE 5000
+
+#Runs the app with python app.py.
+CMD ["python", "app.py"]
+
