@@ -1,0 +1,25 @@
+# syntax=docker/dockerfile:1.4
+FROM --platform=$BUILDPLATFORM python:3.10-alpine AS builder
+
+WORKDIR /src
+
+COPY requirements.txt ./
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip3 install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD ["python3", "server.py"]
+
+# ---------- Development Stage ----------
+FROM builder AS dev-envs
+
+RUN apk update && apk add --no-cache git bash
+
+RUN addgroup -S docker && \
+    adduser -S --shell /bin/bash --ingroup docker vscode
+
+# Install Docker tools (cli, buildx, compose)
+COPY --from=gloursdocker/docker / /
+
+CMD ["python3", "server.py"]
