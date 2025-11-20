@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-08
+spec:
+  containers:
+  - name: test
+    image: docker.io/rkalluru/centos-sleep
+    volumeMounts:
+    - name: data
+      mountPath: /data
+    env:
+    - name: URL
+      valueFrom:
+        configMapKeyRef:
+          name: demo-cm
+          key: URL
+    - name: USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: demo-secret
+          key: USERNAME
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: ebs-claim1

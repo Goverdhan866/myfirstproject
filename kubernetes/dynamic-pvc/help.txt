@@ -1,0 +1,3 @@
+First we need to create the Storge class for dynamic volumes.
+Then while creating the PVC the volume will be created.
+Then we can define the volume in the pods.
